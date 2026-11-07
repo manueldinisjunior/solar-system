@@ -1,7 +1,51 @@
 const toggle = document.getElementById("ephemerisToggle");
 const fields = document.getElementById("ephemerisFields");
 const form = document.getElementById("ephemerisForm");
-const timeInput = document.getElementById("observationTime");
+const dateInput = document.getElementById("observationDate");
+const hourInput = document.getElementById("observationHour");
+const minuteInput = document.getElementById("observationMinute");
+const periodInput = document.getElementById("observationPeriod");
+const timeZoneInfo = document.getElementById("timeZoneInfo");
+for (let hour = 1; hour <= 12; hour++) hourInput.add(new Option(String(hour), String(hour)));
+for (let minute = 0; minute < 60; minute++) minuteInput.add(new Option(String(minute).padStart(2, "0"), String(minute)));
+function zoneParts(date, zone) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+  });
+  return Object.fromEntries(formatter.formatToParts(date).filter(p => p.type !== "literal").map(p => [p.type, Number(p.value)]));
+}
+function zoneOffset(date, zone) {
+  const p = zoneParts(date, zone);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(date.getTime() / 1000) * 1000;
+}
+function selectedDate() {
+  if (!city?.timezone || !dateInput.value) return null;
+  const [year, month, day] = dateInput.value.split("-").map(Number);
+  const hour = Number(hourInput.value) % 12 + (periodInput.value === "PM" ? 12 : 0);
+  const minute = Number(minuteInput.value);
+  const wall = Date.UTC(year, month - 1, day, hour, minute);
+  let utc = wall - zoneOffset(new Date(wall), city.timezone);
+  utc = wall - zoneOffset(new Date(utc), city.timezone);
+  const date = new Date(utc);
+  const p = zoneParts(date, city.timezone);
+  if (p.year !== year || p.month !== month || p.day !== day || p.hour !== hour || p.minute !== minute) {
+    throw new Error("That local time does not exist in this city (daylight saving transition). Choose another time.");
+  }
+  return date;
+}
+function showTimeZone() {
+  if (!city?.timezone) { timeZoneInfo.textContent = "Select a city to use its local time."; return; }
+  try {
+    const date = selectedDate();
+    const offset = zoneOffset(date, city.timezone) / 3600000;
+    const sign = offset >= 0 ? "+" : "−";
+    const hh = String(Math.floor(Math.abs(offset))).padStart(2, "0");
+    const mm = String(Math.round((Math.abs(offset) % 1) * 60)).padStart(2, "0");
+    timeZoneInfo.textContent = city.timezone.replaceAll("_", " ") + " · UTC" + sign + hh + ":" + mm + " on selected date";
+  } catch (error) { timeZoneInfo.textContent = error.message; }
+}
+[dateInput, hourInput, minuteInput, periodInput].forEach(input => input.addEventListener("change", showTimeZone));
 const cityInput = document.getElementById("citySearch");
 const cityResults = document.getElementById("cityResults");
 const selectedCity = document.getElementById("selectedCity");
@@ -30,7 +74,8 @@ function sunSign(date) {
   return [...starts].reverse().find(([start]) => value >= start)?.[1] || "Capricorn";
 }
 function showZodiac(date) {
-  const sign = sunSign(date);
+  const [year, month, day] = dateInput.value.split("-").map(Number);
+  const sign = sunSign(new Date(year, month - 1, day));
   const [element, trait, wish] = SIGN_DETAILS[sign];
   zodiacResult.replaceChildren();
   const heading = document.createElement("h3");
@@ -65,7 +110,8 @@ async function searchCities() {
       button.type = "button";
       button.textContent = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
       button.addEventListener("click", () => {
-        city = { latitude: item.latitude, longitude: item.longitude, label: button.textContent };
+        city = { latitude: item.latitude, longitude: item.longitude, timezone: item.timezone, label: button.textContent };
+        showTimeZone();
         cityInput.value = item.name;
         selectedCity.textContent = "Selected: " + city.label;
         cityResults.replaceChildren();
@@ -99,9 +145,16 @@ const targets = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn",
 let astronomyPromise;
 
 function setNow() {
-  const date = new Date();
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  timeInput.value = local.toISOString().slice(0, 16);
+  const now = new Date();
+  const parts = city?.timezone ? zoneParts(now, city.timezone) : {
+    year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate(),
+    hour: now.getHours(), minute: now.getMinutes()
+  };
+  dateInput.value = [parts.year, String(parts.month).padStart(2, "0"), String(parts.day).padStart(2, "0")].join("-");
+  hourInput.value = String(parts.hour % 12 || 12);
+  minuteInput.value = String(parts.minute);
+  periodInput.value = parts.hour >= 12 ? "PM" : "AM";
+  showTimeZone();
 }
 setNow();
 
@@ -159,10 +212,15 @@ function buildTable(rows) {
 }
 form.addEventListener("submit", async event => {
   event.preventDefault();
-  const date = new Date(timeInput.value);
-  if (!Number.isFinite(date.getTime()) || !city) {
-    status.textContent = "Enter a valid date and select a city from search results.";
+  if (!city?.timezone || !dateInput.value) {
+    status.textContent = "Select a city and a valid date first.";
     return;
+  }
+  let date;
+  try { date = selectedDate(); }
+  catch (error) { status.textContent = error.message; return; }
+  if (!date || !Number.isFinite(date.getTime())) {
+    status.textContent = "Enter a valid date and time."; return;
   }
   const submit = form.querySelector('[type="submit"]');
   submit.disabled = true;
@@ -191,7 +249,7 @@ form.addEventListener("submit", async event => {
     showZodiac(date);
     document.getElementById("captureSky").disabled = false;
     status.textContent = "Calculated for " + date.toISOString().replace("T", " ").slice(0, 16) +
-      " UTC · " + city.label + ".";
+      " UTC · " + city.label + " (" + city.timezone + ").";
   } catch (error) {
     status.textContent = "Astronomy calculations could not load. Check your connection and retry.";
     console.error("Ephemeris unavailable:", error);
