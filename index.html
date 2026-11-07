@@ -48,6 +48,9 @@
           <path d="M5 7h14M5 12h10M5 17h7" />
         </svg>
       </button>
+      <button id="soundBtn" title="Play ambient space sound" aria-label="Play ambient space sound" aria-pressed="false" type="button">
+        <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></svg>
+      </button>
       <button id="resetBtn" title="Reset view" aria-label="Reset view" type="button">
         <svg viewBox="0 0 24 24">
           <path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4" />
@@ -111,6 +114,7 @@
 
   <p class="hint" id="hint">Drag to rotate · Scroll to zoom · Click a planet</p>
 
+  <script src="ambient.js" defer></script>
   <script src="script.js" defer></script>
   <script type="module" src="ephemeris.js"></script>
 </body>
