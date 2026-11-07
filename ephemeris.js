@@ -108,8 +108,9 @@ setNow();
 const mobileLayout = window.matchMedia("(max-width: 760px)");
 function setConstellationPanel(open) {
   fields.hidden = !open;
+  document.querySelector(".ephemeris").classList.toggle("expanded", open);
   toggle.setAttribute("aria-expanded", String(open));
-  toggle.textContent = open ? "Hide settings" : "Add Date, Time, Location";
+  toggle.textContent = open ? "Hide settings" : "Set date & location";
 }
 // Keep desktop expanded, but avoid covering the solar system on mobile.
 setConstellationPanel(!mobileLayout.matches);
