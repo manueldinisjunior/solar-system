@@ -357,14 +357,6 @@ let earthTextureReady = false;
 earthTexture.onload = () => { earthTextureReady = true; };
 earthTexture.onerror = () => { earthTextureReady = false; };
 
-// Actual spacecraft names; orbit locations are illustrative, NOT live orbital data.
-// Their distances, sizes and speeds are intentionally not to scale.
-const EARTH_SATELLITES = [
-  { name: "ISS", phase: 0.2, speed: 0.62, tilt: 0.32, color: "#f5f5f5" },
-  { name: "Hubble", phase: 2.4, speed: 0.45, tilt: -0.58, color: "#b9c9df" },
-  { name: "GPS satellite", phase: 4.5, speed: 0.22, tilt: 0.7, color: "#f2b544" },
-];
-
 // Cache a correctly projected globe instead of stretching the entire world map into strips.
 const earthSourceCanvas = document.createElement("canvas");
 const earthSourceContext = earthSourceCanvas.getContext("2d", { willReadFrequently: true });
@@ -423,35 +415,6 @@ function drawEarthTexture(x, y, r, spin) {
   }
   ctx.drawImage(earthGlobeCanvas, x - r, y - r, r * 2, r * 2);
   return true;
-}
-
-function drawEarthSatellites(earth, now) {
-  if (selected !== earth || !earth.pos) return;
-  const sp = project(earth.pos);
-  if (!sp) return;
-  const r = earth.radius * sp.s;
-  if (r < 5) return;
-  const orbitR = Math.max(18, r * 2.15);
-  ctx.save();
-  ctx.lineWidth = 0.7;
-  for (const satellite of EARTH_SATELLITES) {
-    const a = satellite.phase + now * 0.00006 * satellite.speed;
-    const sx = sp.x + Math.cos(a) * orbitR;
-    const sy = sp.y + Math.sin(a) * orbitR * (0.35 + Math.abs(satellite.tilt) * 0.3);
-    ctx.strokeStyle = "rgba(160,190,225,0.24)";
-    ctx.beginPath();
-    ctx.ellipse(sp.x, sp.y, orbitR, orbitR * (0.35 + Math.abs(satellite.tilt) * 0.3),
-      0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = satellite.color;
-    ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
-    if (showLabels && r > 9) {
-      ctx.font = "10px Inter, system-ui, sans-serif";
-      ctx.fillStyle = "rgba(235,239,245,0.85)";
-      ctx.fillText(satellite.name, sx + 6, sy - 4);
-    }
-  }
-  ctx.restore();
 }
 
 function drawPlanet(p, pp, sunScreen) {
@@ -644,7 +607,6 @@ function frame(now) {
     screenObjects.push({ obj, x: sp.x, y: sp.y, r: obj.radius * sp.s, depth: sp.depth });
   }
 
-  drawEarthSatellites(PLANETS[2], now);
 
   // Labels: active first, then nearest; skip any that would overlap another
   if (showLabels) {
