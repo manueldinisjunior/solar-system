@@ -20,10 +20,12 @@ setNow();
 toggle.addEventListener("click", () => {
   fields.hidden = !fields.hidden;
   toggle.setAttribute("aria-expanded", String(!fields.hidden));
+  toggle.textContent = fields.hidden ? "Set date & location" : "Hide settings";
 });
 document.getElementById("useNow").addEventListener("click", setNow);
 document.getElementById("exitEphemeris").addEventListener("click", () => {
   window.solarEphemeris = null;
+  document.getElementById("captureSky").disabled = true;
   status.textContent = "Illustrative animation restored.";
   results.replaceChildren();
 });
@@ -107,6 +109,7 @@ form.addEventListener("submit", async event => {
       moonDirection: { x: moon.x / moonNorm, y: moon.z / moonNorm, z: moon.y / moonNorm }
     };
     buildTable(rows);
+    document.getElementById("captureSky").disabled = false;
     status.textContent = "Calculated for " + date.toISOString().replace("T", " ").slice(0, 16) +
       " UTC · " + latitude.toFixed(4) + "°, " + longitude.toFixed(4) + "°.";
   } catch (error) {
@@ -115,4 +118,37 @@ form.addEventListener("submit", async event => {
   } finally {
     submit.disabled = false;
   }
+});
+
+document.getElementById("captureSky").addEventListener("click", () => {
+  const state = window.solarEphemeris;
+  if (!state) return;
+  const source = document.getElementById("space");
+  const width = source.width;
+  const height = source.height;
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = width;
+  exportCanvas.height = height;
+  const context = exportCanvas.getContext("2d");
+  context.drawImage(source, 0, 0);
+  const dpr = width / source.clientWidth || 1;
+  const pad = 22 * dpr;
+  context.fillStyle = "rgba(5, 5, 8, 0.86)";
+  context.fillRect(0, 0, width, 92 * dpr);
+  context.fillStyle = "#fff";
+  context.font = `${16 * dpr}px system-ui, sans-serif`;
+  context.fillText("Solar System · calculated planetary positions", pad, 30 * dpr);
+  context.font = `${12 * dpr}px system-ui, sans-serif`;
+  context.fillStyle = "#c7c7ce";
+  context.fillText(`${state.date.replace("T", " ").slice(0, 16)} UTC · Lat ${latInput.value}° · Lon ${lonInput.value}°`, pad, 55 * dpr);
+  context.fillText("Illustrative 3D view · not a constellation chart", pad, 76 * dpr);
+  exportCanvas.toBlob(blob => {
+    if (!blob) { status.textContent = "Could not export the image."; return; }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `solar-system-${state.date.slice(0, 16).replace(/:/g, "-")}.png`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
 });
