@@ -390,8 +390,8 @@ function prepareEarthMap() {
 function drawEarthTexture(x, y, r, spin) {
   prepareEarthMap();
   if (!earthPixels || r < 3) return false;
-  const diameter = Math.min(512, Math.max(16, Math.round(r * 2)));
-  const longitudeOffset = Math.round(spin * 0.04 * 720) / 720;
+  const diameter = Math.min(256, Math.max(16, Math.round(r * 2)));
+  const longitudeOffset = Math.round(spin * 0.04 * 180) / 180;
   const key = diameter + ":" + longitudeOffset;
   if (key !== earthGlobeKey) {
     earthGlobeCanvas.width = diameter;
