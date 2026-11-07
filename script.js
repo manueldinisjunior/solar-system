@@ -555,7 +555,7 @@ function frame(now) {
   cam.yaw += (cam.tYaw - cam.yaw) * 0.1;
   cam.pitch += (cam.tPitch - cam.pitch) * 0.1;
   // Responsive, frame-rate-independent easing without the long trailing zoom lag.
-  const zoomEase = 1 - Math.exp(-Math.min(dt, 0.05) * 15);
+  const zoomEase = 1 - Math.exp(-Math.min(dt, 0.05) * 19);
   cam.dist += (cam.tDist - cam.dist) * zoomEase;
   const focus = selected ? selected.pos : SUN.pos;
   target.x += (focus.x - target.x) * 0.08;
@@ -662,7 +662,7 @@ canvas.addEventListener("pointermove", e => {
   if (pointers.size === 2) {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-    if (pinchDist && d > 0) zoom(Math.pow(pinchDist / d, 0.85));
+    if (pinchDist && d > 0) zoom(Math.pow(pinchDist / d, 1.05));
     pinchDist = d; moved = true;
     return;
   }
@@ -701,7 +701,7 @@ canvas.addEventListener("wheel", e => {
   // Normalize wheel units (pixels / lines / pages) and avoid large jumps.
   const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
   const delta = Math.max(-100, Math.min(100, e.deltaY * unit));
-  zoom(Math.exp(delta * 0.00065));
+  zoom(Math.exp(delta * 0.0009));
   hideHint();
 }, { passive: false });
 
