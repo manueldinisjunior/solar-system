@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050505" />
+  <meta name="description" content="Explore the solar system in an interactive 3D-style planetarium. Rotate, zoom, pause orbits, and learn about the Sun and eight planets." />
+  <link rel="canonical" href="https://manueldinisjunior.github.io/solar-system/" />
+  <title>Interactive Solar System | 3D Planet Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Everything in space is drawn on this canvas by script.js -->
+  <canvas id="space" role="img" aria-label="Interactive solar system view. Use the planet buttons to explore accessible information about each celestial body."></canvas>
+
+  <header class="title">
+    <h1>Solar System</h1>
+    <p>Interactive 3D model</p>
+  </header>
+
+  <div class="controls panel">
+    <div class="speed">
+      <div class="speed-head">
+        <label for="speed">Speed</label>
+        <output id="speedVal" for="speed">1.0×</output>
+      </div>
+      <input type="range" id="speed" min="0" max="5" step="0.1" value="1" />
+    </div>
+    <div class="divider"></div>
+    <div class="buttons">
+      <button id="pauseBtn" title="Pause animation" aria-label="Pause animation" aria-pressed="false" type="button">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 5v14M16 5v14" />
+        </svg>
+      </button>
+      <button id="orbitBtn" class="on" title="Toggle orbits" aria-label="Show orbits" aria-pressed="true" type="button">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="1.5" />
+        </svg>
+      </button>
+      <button id="labelBtn" class="on" title="Toggle labels" aria-label="Show labels" aria-pressed="true" type="button">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 7h14M5 12h10M5 17h7" />
+        </svg>
+      </button>
+      <button id="resetBtn" title="Reset view" aria-label="Reset view" type="button">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Planet buttons and info panel content are filled in by script.js -->
+  <nav class="planet-bar panel" id="planetBar" aria-label="Explore celestial bodies"></nav>
+
+  <aside class="info panel" id="info" aria-labelledby="infoName" aria-hidden="true">
+    <button class="close" id="closeInfo" aria-label="Close planet information" type="button">
+      <svg viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+    <div class="info-head">
+      <span class="info-dot" id="infoDot"></span>
+      <span class="info-type" id="infoType"></span>
+    </div>
+    <h2 id="infoName"></h2>
+    <p class="info-desc" id="infoDesc"></p>
+    <dl class="stats" id="infoStats"></dl>
+    <div class="fact">
+      <span>Did you know?</span>
+      <p id="infoFact"></p>
+    </div>
+  </aside>
+
+  <p class="hint" id="hint">Drag to rotate · Scroll to zoom · Click a planet</p>
+
+  <script src="script.js" defer></script>
+</body>
+
+</html>
