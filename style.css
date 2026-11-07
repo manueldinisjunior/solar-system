@@ -325,3 +325,10 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 420px) { .city-search { flex-wrap: wrap; } }
 
 .date-help { font-size: 11px; line-height: 1.5; color: var(--muted); }
+
+/* Mobile-first initial state: hide settings before the module initializes. */
+@media (max-width: 760px) {
+  .ephemeris:not(.expanded) #ephemerisFields { display: none !important; }
+  .ephemeris { top: 74px; }
+  .ephemeris-heading { min-height: 42px; }
+}
