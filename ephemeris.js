@@ -111,7 +111,7 @@ async function searchCities() {
       button.textContent = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
       button.addEventListener("click", () => {
         city = { latitude: item.latitude, longitude: item.longitude, timezone: item.timezone, label: button.textContent };
-        showTimeZone();
+        setNow();
         cityInput.value = item.name;
         selectedCity.textContent = "Selected: " + city.label;
         cityResults.replaceChildren();
