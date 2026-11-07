@@ -66,9 +66,15 @@
     </div>
     <div id="ephemerisFields">
       <form id="ephemerisForm">
-        <label for="observationTime">Date &amp; time (past, present or future)</label>
-        <input type="datetime-local" id="observationTime" min="1800-01-01T00:00" max="2200-12-31T23:59" required />
-        <p class="date-help">Choose a historical date, such as 1995, or use Now. Times currently follow your device time zone.</p>
+        <label for="observationDate">Date (1800–2200)</label>
+        <input type="date" id="observationDate" min="1800-01-01" max="2200-12-31" required />
+        <label for="observationHour">Time in selected city's time zone</label>
+        <div class="time-fields">
+          <select id="observationHour" aria-label="Hour" required></select>
+          <select id="observationMinute" aria-label="Minute" required></select>
+          <select id="observationPeriod" aria-label="AM or PM"><option>AM</option><option>PM</option></select>
+        </div>
+        <p class="date-help" id="timeZoneInfo">Select a city to use its local time, including daylight saving time where applicable.</p>
         <label for="citySearch">City · suggestions appear as you type</label>
         <div class="city-search">
           <input id="citySearch" type="search" placeholder="e.g. Hildesheim, Maputo, London" autocomplete="off" required />
@@ -86,7 +92,7 @@
       <p id="ephemerisStatus" role="status" aria-live="polite">Select a city and date to calculate planetary positions and your zodiac Sun sign.</p>
       <div id="zodiacResult" class="zodiac-result" aria-live="polite"></div>
       <div class="ephemeris-results" id="ephemerisResults"></div>
-      <p class="ephemeris-note">Zodiac readings are for reflection and entertainment, not scientific predictions. The visualization shows planets, not a mapped constellation sky. Date/time uses your device time zone.</p>
+      <p class="ephemeris-note">Zodiac readings are for reflection and entertainment, not scientific predictions. The visualization shows planets, not a mapped constellation sky. Date and time are interpreted in the selected city’s time zone.</p>
     </div>
   </section>
 
