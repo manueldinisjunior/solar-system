@@ -1,0 +1,3 @@
+# Source attribution / licensing
+
+The uploaded original `index.html` contained the title credit “Created by @coding.stella”. No license was present in the uploaded archive. The copyright and reuse permissions for the original source were not established. This repository does not assert that the original work is MIT-licensed or otherwise open source. Confirm permission with the original author before public redistribution or licensing.
