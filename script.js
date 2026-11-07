@@ -531,15 +531,21 @@ function frame(now) {
   PLANETS.forEach(p => {
     p.angle += p.speed * step;
     p.spin += step * 3;
-    p.pos = orbitPoint(p.dist, p.angle, p.incl);
+    const ephemerisDirection = window.solarEphemeris?.positions?.[p.name];
+    p.pos = ephemerisDirection
+      ? { x: ephemerisDirection.x * p.dist, y: ephemerisDirection.y * p.dist, z: ephemerisDirection.z * p.dist }
+      : orbitPoint(p.dist, p.angle, p.incl);
   });
   const earth = PLANETS[2];
   MOON.angle += step * 4;
-  MOON.pos = {
-    x: earth.pos.x + Math.cos(MOON.angle) * MOON.dist,
-    y: earth.pos.y + Math.sin(MOON.angle) * 3,
-    z: earth.pos.z + Math.sin(MOON.angle) * MOON.dist,
-  };
+  const moonDir = window.solarEphemeris?.moonDirection;
+  MOON.pos = moonDir
+    ? { x: earth.pos.x + moonDir.x * MOON.dist, y: earth.pos.y + moonDir.y * MOON.dist, z: earth.pos.z + moonDir.z * MOON.dist }
+    : {
+        x: earth.pos.x + Math.cos(MOON.angle) * MOON.dist,
+        y: earth.pos.y + Math.sin(MOON.angle) * 3,
+        z: earth.pos.z + Math.sin(MOON.angle) * MOON.dist,
+      };
   ASTEROIDS.forEach(a => (a.a += a.speed * step));
 
   // Ease the camera toward its targets for smooth movement
@@ -556,7 +562,8 @@ function frame(now) {
 
   ctx.drawImage(backdrop, 0, 0, W, H);
   drawGalaxy(now, dt);
-  if (showOrbits) PLANETS.forEach(drawOrbit);
+  // Schematic circular paths do not represent the calculated ephemeris.
+  if (showOrbits && !window.solarEphemeris) PLANETS.forEach(drawOrbit);
 
   const sunScreen = project(SUN.pos) || { x: W / 2, y: H / 2, s: 0, depth: 1e9 };
 
