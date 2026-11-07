@@ -63,15 +63,16 @@
     </div>
     <div id="ephemerisFields">
       <form id="ephemerisForm">
-        <label for="observationTime">Date &amp; time (your local time)</label>
-        <input type="datetime-local" id="observationTime" required />
-        <label for="citySearch">Location · search for a city</label>
+        <label for="observationTime">Date &amp; time (past, present or future)</label>
+        <input type="datetime-local" id="observationTime" min="1800-01-01T00:00" max="2200-12-31T23:59" required />
+        <p class="date-help">Choose a historical date, such as 1995, or use Now. Times currently follow your device time zone.</p>
+        <label for="citySearch">City · suggestions appear as you type</label>
         <div class="city-search">
           <input id="citySearch" type="search" placeholder="e.g. Hildesheim, Maputo, London" autocomplete="off" required />
           <button type="button" id="searchCity">Find city</button>
         </div>
         <div id="cityResults" class="city-results" aria-label="City search results"></div>
-        <p id="selectedCity" class="selected-city" role="status">No city selected</p>
+        <p id="selectedCity" class="selected-city" role="status">Start typing a city name, then select a match</p>
         <div class="ephemeris-actions">
           <button type="submit">See Constellation</button>
           <button type="button" id="useNow">Now</button>
