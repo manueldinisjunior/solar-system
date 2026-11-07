@@ -346,6 +346,75 @@ function ring(x, y, r, strong) {
   ctx.stroke();
 }
 
+
+// Real Earth imagery: the 2K equirectangular Earth texture from the three.js examples.
+// Loaded once, only when available; the original procedural globe remains the fallback.
+const earthTexture = new Image();
+earthTexture.decoding = "async";
+earthTexture.src = "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg";
+let earthTextureReady = false;
+earthTexture.onload = () => { earthTextureReady = true; };
+earthTexture.onerror = () => { earthTextureReady = false; };
+
+// Actual spacecraft names; orbit locations are illustrative, NOT live orbital data.
+// Their distances, sizes and speeds are intentionally not to scale.
+const EARTH_SATELLITES = [
+  { name: "ISS", phase: 0.2, speed: 0.62, tilt: 0.32, color: "#f5f5f5" },
+  { name: "Hubble", phase: 2.4, speed: 0.45, tilt: -0.58, color: "#b9c9df" },
+  { name: "GPS satellite", phase: 4.5, speed: 0.22, tilt: 0.7, color: "#f2b544" },
+];
+
+function drawEarthTexture(x, y, r, spin) {
+  if (!earthTextureReady || r < 3) return false;
+  // Orthographic longitude projection; columns narrow toward the globe's rim.
+  // Limit work to the visible pixel diameter and avoid a full texture resample.
+  const columns = Math.min(180, Math.max(24, Math.ceil(r * 2)));
+  const imageWidth = earthTexture.naturalWidth;
+  const imageHeight = earthTexture.naturalHeight;
+  const phase = (spin * 0.04) % 1;
+  for (let i = 0; i < columns; i++) {
+    const left = -1 + (2 * i) / columns;
+    const right = -1 + (2 * (i + 1)) / columns;
+    const nx = (left + right) * 0.5;
+    const halfHeight = r * Math.sqrt(Math.max(0, 1 - nx * nx));
+    const longitude = Math.asin(nx) / (2 * Math.PI);
+    const u = ((phase + longitude + 0.5) % 1 + 1) % 1;
+    const sx = Math.min(imageWidth - 2, Math.floor(u * imageWidth));
+    ctx.drawImage(earthTexture, sx, 0, 2, imageHeight,
+      x + left * r, y - halfHeight, Math.max(1, (right - left) * r + 0.6), halfHeight * 2);
+  }
+  return true;
+}
+
+function drawEarthSatellites(earth, now) {
+  if (selected !== earth || !earth.pos) return;
+  const sp = project(earth.pos);
+  if (!sp) return;
+  const r = earth.radius * sp.s;
+  if (r < 5) return;
+  const orbitR = Math.max(18, r * 2.15);
+  ctx.save();
+  ctx.lineWidth = 0.7;
+  for (const satellite of EARTH_SATELLITES) {
+    const a = satellite.phase + now * 0.00006 * satellite.speed;
+    const sx = sp.x + Math.cos(a) * orbitR;
+    const sy = sp.y + Math.sin(a) * orbitR * (0.35 + Math.abs(satellite.tilt) * 0.3);
+    ctx.strokeStyle = "rgba(160,190,225,0.24)";
+    ctx.beginPath();
+    ctx.ellipse(sp.x, sp.y, orbitR, orbitR * (0.35 + Math.abs(satellite.tilt) * 0.3),
+      0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = satellite.color;
+    ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
+    if (showLabels && r > 9) {
+      ctx.font = "10px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "rgba(235,239,245,0.85)";
+      ctx.fillText(satellite.name, sx + 6, sy - 4);
+    }
+  }
+  ctx.restore();
+}
+
 function drawPlanet(p, pp, sunScreen) {
   const r = Math.max(p.radius * pp.s, 1.5);
   const { x, y } = pp;
@@ -377,8 +446,8 @@ function drawPlanet(p, pp, sunScreen) {
     }
   }
 
-  // Earth: continents that scroll as it spins, plus ice caps
-  if (p.land) {
+  // Real mapped globe when the image is ready; graceful offline fallback.
+  if (p.land && !drawEarthTexture(x, y, r, p.spin)) {
     ctx.fillStyle = "rgba(76,175,80,0.85)";
     const shift = (p.spin * r * 0.5) % (r * 4);
     for (const [ox, oy, rx, ry] of [[-0.5, -0.2, 0.35, 0.45], [0.6, 0.15, 0.3, 0.35], [1.6, -0.3, 0.4, 0.3], [2.6, 0.3, 0.3, 0.4]]) {
@@ -528,6 +597,8 @@ function frame(now) {
     }
     screenObjects.push({ obj, x: sp.x, y: sp.y, r: obj.radius * sp.s, depth: sp.depth });
   }
+
+  drawEarthSatellites(PLANETS[2], now);
 
   // Labels: active first, then nearest; skip any that would overlap another
   if (showLabels) {
