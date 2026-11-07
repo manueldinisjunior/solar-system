@@ -58,27 +58,28 @@
 
   <section class="ephemeris panel" aria-labelledby="ephemerisTitle">
     <div class="ephemeris-heading">
-      <h2 id="ephemerisTitle">Planet positions</h2>
-      <button type="button" id="ephemerisToggle" aria-expanded="false" aria-controls="ephemerisFields">Set date &amp; location</button>
+      <h2 id="ephemerisTitle">Date, time &amp; location</h2>
+      <button type="button" id="ephemerisToggle" aria-expanded="true" aria-controls="ephemerisFields">Hide settings</button>
     </div>
-    <div id="ephemerisFields" hidden>
+    <div id="ephemerisFields">
       <form id="ephemerisForm">
         <label for="observationTime">Date &amp; time (your local time)</label>
         <input type="datetime-local" id="observationTime" required />
         <div class="coordinates">
-          <label>Latitude <input id="observerLat" type="number" min="-90" max="90" step="any" value="52.1548" required /></label>
-          <label>Longitude <input id="observerLon" type="number" min="-180" max="180" step="any" value="9.957" required /></label>
+          <label>Latitude (example: Hildesheim) <input id="observerLat" type="number" min="-90" max="90" step="any" value="52.1548" required /></label>
+          <label>Longitude (example: Hildesheim) <input id="observerLon" type="number" min="-180" max="180" step="any" value="9.957" required /></label>
         </div>
         <div class="ephemeris-actions">
-          <button type="submit">Calculate</button>
+          <button type="submit">Show positions</button>
           <button type="button" id="useLocation">Use my location</button>
           <button type="button" id="useNow">Now</button>
           <button type="button" id="exitEphemeris">Simulation</button>
+          <button type="button" id="captureSky" disabled>Save screenshot</button>
         </div>
       </form>
       <p id="ephemerisStatus" role="status" aria-live="polite">Choose a date and location to calculate planet positions.</p>
       <div class="ephemeris-results" id="ephemerisResults"></div>
-      <p class="ephemeris-note">Positions are calculated for the Solar System. Altitude and azimuth are observer-dependent. This is not a live satellite tracker. Visual sizes and distances are not to scale.</p>
+      <p class="ephemeris-note">This view shows planets, not the constellations or a ground-level night sky. Planet directions are calculated, but visual distances and sizes are illustrative.</p>
     </div>
   </section>
 
