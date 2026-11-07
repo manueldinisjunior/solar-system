@@ -2,8 +2,91 @@ const toggle = document.getElementById("ephemerisToggle");
 const fields = document.getElementById("ephemerisFields");
 const form = document.getElementById("ephemerisForm");
 const timeInput = document.getElementById("observationTime");
-const latInput = document.getElementById("observerLat");
-const lonInput = document.getElementById("observerLon");
+const cityInput = document.getElementById("citySearch");
+const cityResults = document.getElementById("cityResults");
+const selectedCity = document.getElementById("selectedCity");
+const zodiacResult = document.getElementById("zodiacResult");
+let city = null;
+let cityRequest = 0;
+const SIGNS = [
+  ["Capricorn", 120], ["Aquarius", 119], ["Pisces", 320], ["Aries", 419],
+  ["Taurus", 520], ["Gemini", 620], ["Cancer", 722], ["Leo", 822],
+  ["Virgo", 922], ["Libra", 1022], ["Scorpio", 1121], ["Sagittarius", 1221], ["Capricorn", 1231]
+];
+const SIGN_DETAILS = {
+  Aries: ["Fire", "initiative", "Your courage can open doors. Choose one meaningful step and give it your full attention."],
+  Taurus: ["Earth", "steadiness", "May patience reward your efforts. Build something lasting, one careful decision at a time."],
+  Gemini: ["Air", "curiosity", "Stay open to a new conversation. A fresh perspective may reveal an opportunity."],
+  Cancer: ["Water", "care", "May you find comfort in the people and places that help you feel at home."],
+  Leo: ["Fire", "creativity", "Let your work speak for you. Share an idea you believe in and make room for joy."],
+  Virgo: ["Earth", "precision", "Trust the progress of small improvements. Your attention to detail is a strength."],
+  Libra: ["Air", "balance", "May clarity guide your choices. Make time for both your ambitions and your peace."],
+  Scorpio: ["Water", "determination", "Your persistence matters. Release what you cannot control and focus on what you can change."],
+  Sagittarius: ["Fire", "exploration", "Keep learning and exploring. The next useful discovery may be closer than you think."],
+  Capricorn: ["Earth", "discipline", "May your steady effort lead to worthwhile results. Give yourself credit for the distance travelled."],
+  Aquarius: ["Air", "originality", "Make space for your own ideas. A practical experiment could lead somewhere interesting."],
+  Pisces: ["Water", "imagination", "Protect your curiosity. Let a thoughtful idea become one real action today."]
+};
+function sunSign(date) {
+  const value = (date.getMonth() + 1) * 100 + date.getDate();
+  const starts = [[120,"Aquarius"],[219,"Pisces"],[321,"Aries"],[420,"Taurus"],[521,"Gemini"],[621,"Cancer"],[723,"Leo"],[823,"Virgo"],[923,"Libra"],[1023,"Scorpio"],[1122,"Sagittarius"],[1222,"Capricorn"]];
+  return [...starts].reverse().find(([start]) => value >= start)?.[1] || "Capricorn";
+}
+function showZodiac(date) {
+  const sign = sunSign(date);
+  const [element, trait, wish] = SIGN_DETAILS[sign];
+  zodiacResult.replaceChildren();
+  const heading = document.createElement("h3");
+  heading.textContent = sign + " · Western zodiac Sun sign";
+  const detail = document.createElement("p");
+  detail.textContent = "Element: " + element + " · Associated quality: " + trait + ".";
+  const message = document.createElement("p");
+  message.textContent = wish;
+  const note = document.createElement("small");
+  note.textContent = "Based on calendar-date zodiac conventions, not an astronomical birth chart. Dates near sign boundaries may vary.";
+  zodiacResult.append(heading, detail, message, note);
+}
+async function searchCities() {
+  const query = cityInput.value.trim();
+  if (query.length < 2) { status.textContent = "Enter at least two characters to find a city."; return; }
+  const requestId = ++cityRequest;
+  city = null;
+  selectedCity.textContent = "Searching…";
+  cityResults.replaceChildren();
+  try {
+    const response = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(query) + "&count=8&language=en&format=json");
+    if (!response.ok) throw new Error("Geocoding failed");
+    const data = await response.json();
+    if (requestId !== cityRequest) return;
+    const locations = data.results || [];
+    if (!locations.length) { selectedCity.textContent = "No matching city. Try a more specific name."; return; }
+    selectedCity.textContent = "Select a city from the results:";
+    for (const item of locations) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = [item.name, item.admin1, item.country].filter(Boolean).join(", ");
+      button.addEventListener("click", () => {
+        city = { latitude: item.latitude, longitude: item.longitude, label: button.textContent };
+        cityInput.value = item.name;
+        selectedCity.textContent = "Selected: " + city.label;
+        cityResults.replaceChildren();
+      });
+      cityResults.append(button);
+    }
+  } catch (error) {
+    selectedCity.textContent = "City search unavailable. Check your connection and retry.";
+  }
+}
+document.getElementById("searchCity").addEventListener("click", searchCities);
+cityInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") { event.preventDefault(); searchCities(); }
+});
+cityInput.addEventListener("input", () => {
+  city = null;
+  ++cityRequest;
+  selectedCity.textContent = "Select a city to continue.";
+  cityResults.replaceChildren();
+});
 const status = document.getElementById("ephemerisStatus");
 const results = document.getElementById("ephemerisResults");
 const names = ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
@@ -28,22 +111,7 @@ document.getElementById("exitEphemeris").addEventListener("click", () => {
   document.getElementById("captureSky").disabled = true;
   status.textContent = "Illustrative animation restored.";
   results.replaceChildren();
-});
-document.getElementById("useLocation").addEventListener("click", () => {
-  if (!navigator.geolocation) {
-    status.textContent = "Geolocation is not supported. Enter coordinates manually.";
-    return;
-  }
-  status.textContent = "Waiting for location permission…";
-  navigator.geolocation.getCurrentPosition(
-    ({ coords }) => {
-      latInput.value = coords.latitude.toFixed(5);
-      lonInput.value = coords.longitude.toFixed(5);
-      status.textContent = "Location received. Select Calculate.";
-    },
-    () => { status.textContent = "Location unavailable or permission denied. Enter coordinates manually."; },
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
-  );
+  zodiacResult.replaceChildren();
 });
 
 function astronomyEngine() {
@@ -78,11 +146,8 @@ function buildTable(rows) {
 form.addEventListener("submit", async event => {
   event.preventDefault();
   const date = new Date(timeInput.value);
-  const latitude = Number(latInput.value);
-  const longitude = Number(lonInput.value);
-  if (!Number.isFinite(date.getTime()) || !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
-      latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-    status.textContent = "Enter a valid date, latitude (−90 to 90) and longitude (−180 to 180).";
+  if (!Number.isFinite(date.getTime()) || !city) {
+    status.textContent = "Enter a valid date and select a city from search results.";
     return;
   }
   const submit = form.querySelector('[type="submit"]');
@@ -90,7 +155,7 @@ form.addEventListener("submit", async event => {
   status.textContent = "Calculating…";
   try {
     const A = await astronomyEngine();
-    const observer = new A.Observer(latitude, longitude, 0);
+    const observer = new A.Observer(city.latitude, city.longitude, 0);
     const rows = targets.map(name => {
       const eq = A.Equator(name, date, observer, true, true);
       const horizontal = A.Horizon(date, observer, eq.ra, eq.dec, "normal");
@@ -109,9 +174,10 @@ form.addEventListener("submit", async event => {
       moonDirection: { x: moon.x / moonNorm, y: moon.z / moonNorm, z: moon.y / moonNorm }
     };
     buildTable(rows);
+    showZodiac(date);
     document.getElementById("captureSky").disabled = false;
     status.textContent = "Calculated for " + date.toISOString().replace("T", " ").slice(0, 16) +
-      " UTC · " + latitude.toFixed(4) + "°, " + longitude.toFixed(4) + "°.";
+      " UTC · " + city.label + ".";
   } catch (error) {
     status.textContent = "Astronomy calculations could not load. Check your connection and retry.";
     console.error("Ephemeris unavailable:", error);
@@ -137,10 +203,10 @@ document.getElementById("captureSky").addEventListener("click", () => {
   context.fillRect(0, 0, width, 92 * dpr);
   context.fillStyle = "#fff";
   context.font = `${16 * dpr}px system-ui, sans-serif`;
-  context.fillText("Solar System · calculated planetary positions", pad, 30 * dpr);
+  context.fillText("See Constellation · planetary positions", pad, 30 * dpr);
   context.font = `${12 * dpr}px system-ui, sans-serif`;
   context.fillStyle = "#c7c7ce";
-  context.fillText(`${state.date.replace("T", " ").slice(0, 16)} UTC · Lat ${latInput.value}° · Lon ${lonInput.value}°`, pad, 55 * dpr);
+  context.fillText(`${state.date.replace("T", " ").slice(0, 16)} UTC · ${city?.label || "Unknown location"}`, pad, 55 * dpr);
   context.fillText("Illustrative 3D view · not a constellation chart", pad, 76 * dpr);
   exportCanvas.toBlob(blob => {
     if (!blob) { status.textContent = "Could not export the image."; return; }
