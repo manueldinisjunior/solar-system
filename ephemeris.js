@@ -8,6 +8,8 @@ const selectedCity = document.getElementById("selectedCity");
 const zodiacResult = document.getElementById("zodiacResult");
 let city = null;
 let cityRequest = 0;
+let citySearchTimer;
+let citySearchController;
 const SIGN_DETAILS = {
   Aries: ["Fire", "initiative", "Your courage can open doors. Choose one meaningful step and give it your full attention."],
   Taurus: ["Earth", "steadiness", "May patience reward your efforts. Build something lasting, one careful decision at a time."],
@@ -45,11 +47,13 @@ async function searchCities() {
   const query = cityInput.value.trim();
   if (query.length < 2) { status.textContent = "Enter at least two characters to find a city."; return; }
   const requestId = ++cityRequest;
+  citySearchController?.abort();
+  citySearchController = new AbortController();
   city = null;
   selectedCity.textContent = "Searching…";
   cityResults.replaceChildren();
   try {
-    const response = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(query) + "&count=8&language=en&format=json");
+    const response = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(query) + "&count=8&language=en&format=json", { signal: citySearchController.signal });
     if (!response.ok) throw new Error("Geocoding failed");
     const data = await response.json();
     if (requestId !== cityRequest) return;
@@ -69,18 +73,24 @@ async function searchCities() {
       cityResults.append(button);
     }
   } catch (error) {
-    selectedCity.textContent = "City search unavailable. Check your connection and retry.";
+    if (error.name !== "AbortError" && requestId === cityRequest) selectedCity.textContent = "City search unavailable. Check your connection and retry.";
   }
 }
-document.getElementById("searchCity").addEventListener("click", searchCities);
+document.getElementById("searchCity").addEventListener("click", () => {
+  clearTimeout(citySearchTimer);
+  searchCities();
+});
 cityInput.addEventListener("keydown", event => {
   if (event.key === "Enter") { event.preventDefault(); searchCities(); }
 });
 cityInput.addEventListener("input", () => {
   city = null;
   ++cityRequest;
+  citySearchController?.abort();
+  clearTimeout(citySearchTimer);
   selectedCity.textContent = "Select a city to continue.";
   cityResults.replaceChildren();
+  if (cityInput.value.trim().length >= 2) citySearchTimer = setTimeout(searchCities, 350);
 });
 const status = document.getElementById("ephemerisStatus");
 const results = document.getElementById("ephemerisResults");
