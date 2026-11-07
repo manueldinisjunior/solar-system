@@ -323,3 +323,5 @@ button { -webkit-tap-highlight-color: transparent; }
 .zodiac-result p { font-size: 12px; line-height: 1.6; margin-bottom: 8px; }
 .zodiac-result small { display: block; font-size: 10px; color: var(--muted); line-height: 1.5; }
 @media (max-width: 420px) { .city-search { flex-wrap: wrap; } }
+
+.date-help { font-size: 11px; line-height: 1.5; color: var(--muted); }
