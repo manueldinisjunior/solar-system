@@ -8,11 +8,6 @@ const selectedCity = document.getElementById("selectedCity");
 const zodiacResult = document.getElementById("zodiacResult");
 let city = null;
 let cityRequest = 0;
-const SIGNS = [
-  ["Capricorn", 120], ["Aquarius", 119], ["Pisces", 320], ["Aries", 419],
-  ["Taurus", 520], ["Gemini", 620], ["Cancer", 722], ["Leo", 822],
-  ["Virgo", 922], ["Libra", 1022], ["Scorpio", 1121], ["Sagittarius", 1221], ["Capricorn", 1231]
-];
 const SIGN_DETAILS = {
   Aries: ["Fire", "initiative", "Your courage can open doors. Choose one meaningful step and give it your full attention."],
   Taurus: ["Earth", "steadiness", "May patience reward your efforts. Build something lasting, one careful decision at a time."],
