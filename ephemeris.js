@@ -105,10 +105,18 @@ function setNow() {
 }
 setNow();
 
+const mobileLayout = window.matchMedia("(max-width: 760px)");
+function setConstellationPanel(open) {
+  fields.hidden = !open;
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.textContent = open ? "Hide settings" : "Add Date, Time, Location";
+}
+// Keep desktop expanded, but avoid covering the solar system on mobile.
+setConstellationPanel(!mobileLayout.matches);
+mobileLayout.addEventListener("change", event => setConstellationPanel(!event.matches));
+
 toggle.addEventListener("click", () => {
-  fields.hidden = !fields.hidden;
-  toggle.setAttribute("aria-expanded", String(!fields.hidden));
-  toggle.textContent = fields.hidden ? "Set date & location" : "Hide settings";
+  setConstellationPanel(fields.hidden);
 });
 document.getElementById("useNow").addEventListener("click", setNow);
 document.getElementById("exitEphemeris").addEventListener("click", () => {
