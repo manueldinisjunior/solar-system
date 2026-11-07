@@ -33,3 +33,7 @@ This is a visual educational simulation, not a scientifically scale-accurate orb
 ## Credits
 
 The initial visual prototype was provided as an uploaded archive. The source HTML originally credited `@coding.stella`; that attribution is documented here and in `LICENSE-NOTICE.md` until provenance and licensing are confirmed. Do not assume this project grants redistribution rights to third-party code.
+
+## Earth map and satellites
+
+Earth uses a remotely loaded 2048px equirectangular image from the [three.js examples](https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg). It falls back to the original procedural rendering if the texture cannot load. Select Earth to see markers for the International Space Station (ISS), Hubble Space Telescope and a representative GPS satellite. Their orbits are illustrative, not real-time positions or scale-accurate trajectories. The texture requires an internet connection and is subject to the upstream image host's availability and licensing.
