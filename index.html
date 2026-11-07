@@ -58,28 +58,31 @@
 
   <section class="ephemeris panel" aria-labelledby="ephemerisTitle">
     <div class="ephemeris-heading">
-      <h2 id="ephemerisTitle">Date, time &amp; location</h2>
-      <button type="button" id="ephemerisToggle" aria-expanded="true" aria-controls="ephemerisFields">Hide settings</button>
+      <h2 id="ephemerisTitle">See Constellation</h2>
+      <button type="button" id="ephemerisToggle" aria-expanded="true" aria-controls="ephemerisFields">Add Date, Time, Location</button>
     </div>
     <div id="ephemerisFields">
       <form id="ephemerisForm">
         <label for="observationTime">Date &amp; time (your local time)</label>
         <input type="datetime-local" id="observationTime" required />
-        <div class="coordinates">
-          <label>Latitude (example: Hildesheim) <input id="observerLat" type="number" min="-90" max="90" step="any" value="52.1548" required /></label>
-          <label>Longitude (example: Hildesheim) <input id="observerLon" type="number" min="-180" max="180" step="any" value="9.957" required /></label>
+        <label for="citySearch">Location · search for a city</label>
+        <div class="city-search">
+          <input id="citySearch" type="search" placeholder="e.g. Hildesheim, Maputo, London" autocomplete="off" required />
+          <button type="button" id="searchCity">Find city</button>
         </div>
+        <div id="cityResults" class="city-results" aria-label="City search results"></div>
+        <p id="selectedCity" class="selected-city" role="status">No city selected</p>
         <div class="ephemeris-actions">
-          <button type="submit">Show positions</button>
-          <button type="button" id="useLocation">Use my location</button>
+          <button type="submit">See Constellation</button>
           <button type="button" id="useNow">Now</button>
           <button type="button" id="exitEphemeris">Simulation</button>
           <button type="button" id="captureSky" disabled>Save screenshot</button>
         </div>
       </form>
-      <p id="ephemerisStatus" role="status" aria-live="polite">Choose a date and location to calculate planet positions.</p>
+      <p id="ephemerisStatus" role="status" aria-live="polite">Select a city and date to calculate planetary positions and your zodiac Sun sign.</p>
+      <div id="zodiacResult" class="zodiac-result" aria-live="polite"></div>
       <div class="ephemeris-results" id="ephemerisResults"></div>
-      <p class="ephemeris-note">This view shows planets, not the constellations or a ground-level night sky. Planet directions are calculated, but visual distances and sizes are illustrative.</p>
+      <p class="ephemeris-note">Zodiac readings are for reflection and entertainment, not scientific predictions. The visualization shows planets, not a mapped constellation sky. Date/time uses your device time zone.</p>
     </div>
   </section>
 
