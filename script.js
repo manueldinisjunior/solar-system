@@ -351,6 +351,7 @@ function ring(x, y, r, strong) {
 // Loaded once, only when available; the original procedural globe remains the fallback.
 const earthTexture = new Image();
 earthTexture.decoding = "async";
+earthTexture.crossOrigin = "anonymous";
 earthTexture.src = "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg";
 let earthTextureReady = false;
 earthTexture.onload = () => { earthTextureReady = true; };
@@ -364,25 +365,63 @@ const EARTH_SATELLITES = [
   { name: "GPS satellite", phase: 4.5, speed: 0.22, tilt: 0.7, color: "#f2b544" },
 ];
 
-function drawEarthTexture(x, y, r, spin) {
-  if (!earthTextureReady || r < 3) return false;
-  // Orthographic longitude projection; columns narrow toward the globe's rim.
-  // Limit work to the visible pixel diameter and avoid a full texture resample.
-  const columns = Math.min(180, Math.max(24, Math.ceil(r * 2)));
-  const imageWidth = earthTexture.naturalWidth;
-  const imageHeight = earthTexture.naturalHeight;
-  const phase = (spin * 0.04) % 1;
-  for (let i = 0; i < columns; i++) {
-    const left = -1 + (2 * i) / columns;
-    const right = -1 + (2 * (i + 1)) / columns;
-    const nx = (left + right) * 0.5;
-    const halfHeight = r * Math.sqrt(Math.max(0, 1 - nx * nx));
-    const longitude = Math.asin(nx) / (2 * Math.PI);
-    const u = ((phase + longitude + 0.5) % 1 + 1) % 1;
-    const sx = Math.min(imageWidth - 2, Math.floor(u * imageWidth));
-    ctx.drawImage(earthTexture, sx, 0, 2, imageHeight,
-      x + left * r, y - halfHeight, Math.max(1, (right - left) * r + 0.6), halfHeight * 2);
+// Cache a correctly projected globe instead of stretching the entire world map into strips.
+const earthSourceCanvas = document.createElement("canvas");
+const earthSourceContext = earthSourceCanvas.getContext("2d", { willReadFrequently: true });
+const earthGlobeCanvas = document.createElement("canvas");
+const earthGlobeContext = earthGlobeCanvas.getContext("2d");
+let earthPixels = null;
+let earthGlobeKey = "";
+let earthMapUnavailable = false;
+
+function prepareEarthMap() {
+  if (!earthTextureReady || earthPixels || earthMapUnavailable) return;
+  try {
+    earthSourceCanvas.width = earthTexture.naturalWidth;
+    earthSourceCanvas.height = earthTexture.naturalHeight;
+    earthSourceContext.drawImage(earthTexture, 0, 0);
+    earthPixels = earthSourceContext.getImageData(0, 0, earthSourceCanvas.width, earthSourceCanvas.height);
+  } catch (error) {
+    earthMapUnavailable = true;
+    console.warn("Earth texture could not be read; using fallback.", error);
   }
+}
+
+function drawEarthTexture(x, y, r, spin) {
+  prepareEarthMap();
+  if (!earthPixels || r < 3) return false;
+  const diameter = Math.min(512, Math.max(16, Math.round(r * 2)));
+  const longitudeOffset = Math.round(spin * 0.04 * 720) / 720;
+  const key = diameter + ":" + longitudeOffset;
+  if (key !== earthGlobeKey) {
+    earthGlobeCanvas.width = diameter;
+    earthGlobeCanvas.height = diameter;
+    const output = earthGlobeContext.createImageData(diameter, diameter);
+    const src = earthPixels.data;
+    const sw = earthPixels.width, sh = earthPixels.height;
+    const dst = output.data;
+    for (let py = 0; py < diameter; py++) {
+      const ny = 1 - 2 * (py + 0.5) / diameter;
+      for (let px = 0; px < diameter; px++) {
+        const nx = 2 * (px + 0.5) / diameter - 1;
+        const rr = nx * nx + ny * ny;
+        if (rr > 1) continue;
+        // Inverse orthographic projection: preserve both latitude and longitude.
+        const nz = Math.sqrt(1 - rr);
+        const latitude = Math.asin(ny);
+        const longitude = Math.atan2(nx, nz);
+        const u = ((0.5 + longitude / (2 * Math.PI) + longitudeOffset) % 1 + 1) % 1;
+        const sx = Math.min(sw - 1, Math.floor(u * sw));
+        const sy = Math.min(sh - 1, Math.floor((0.5 - latitude / Math.PI) * sh));
+        const si = (sy * sw + sx) * 4;
+        const di = (py * diameter + px) * 4;
+        dst[di] = src[si]; dst[di + 1] = src[si + 1]; dst[di + 2] = src[si + 2]; dst[di + 3] = 255;
+      }
+    }
+    earthGlobeContext.putImageData(output, 0, 0);
+    earthGlobeKey = key;
+  }
+  ctx.drawImage(earthGlobeCanvas, x - r, y - r, r * 2, r * 2);
   return true;
 }
 
